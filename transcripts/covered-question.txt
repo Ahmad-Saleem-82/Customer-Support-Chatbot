@@ -1,0 +1,2 @@
+How do I reset my password?
+To reset your password, use the “Forgot password” link on the sign-in page. You’ll receive a reset email if the address matches an account. If you need further assistance, please contact our support team at 1-800-123-4567.
