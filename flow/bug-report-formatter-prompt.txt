@@ -1,0 +1,17 @@
+Extract the bug report information from the customer's message below.
+
+Customer message:
+{{customer_message}}
+
+Return ONLY valid JSON in exactly this format:
+{
+  "description": "string",
+  "stepsToReproduce": "string",
+  "environment": "string"
+}
+
+Rules:
+- Extract only information actually provided by the customer.
+- Do not invent missing information.
+- If information is missing, use an empty string.
+- Return valid JSON only.
