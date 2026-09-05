@@ -1,6 +1,6 @@
 # Customer Support Chatbot with Amazon Bedrock Flows
 
-> An intelligent, production-oriented customer support automation system built with **Amazon Bedrock Flows**, **Amazon Nova Pro**, **AWS Lambda**, and **Amazon DynamoDB**.
+> An AI-powered customer support automation system built with **Amazon Bedrock Flows**, **Amazon Nova Pro**, **AWS Lambda**, and **Amazon DynamoDB**.
 
 [![AWS](https://img.shields.io/badge/AWS-Amazon%20Bedrock-orange?logo=amazon-aws)](https://aws.amazon.com/bedrock/)
 [![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)](https://www.python.org/)
@@ -9,117 +9,79 @@
 
 ---
 
-## 📌 Overview
+## Overview
 
-The **Customer Support Chatbot** is an event-driven AI support system that automatically understands incoming customer messages, classifies their intent, and routes each request to the appropriate workflow.
+The **Customer Support Chatbot** is a serverless AI support workflow implemented with **Amazon Bedrock Flows**.
 
-Instead of treating every customer message identically, the system uses an **Amazon Bedrock Flow** to orchestrate specialized paths:
+The workflow classifies an incoming customer request into one of three mutually exclusive categories:
 
-1. **Bug Report** → extracts structured information → invokes an AWS Lambda function → creates a persistent support ticket in DynamoDB.
-2. **Platform Question** → routes the request to the FAQ/support response path.
-3. **Other Request** → redirects the customer toward human support.
+1. **BUG_REPORT** — collects/structures bug information and creates a support ticket.
+2. **PLATFORM_QUESTION** — handles questions through the configured FAQ/support path.
+3. **OTHER** — redirects unsupported or out-of-scope requests to human support.
 
-The architecture combines **LLM-based reasoning with deterministic workflow routing and serverless persistence**, providing a foundation for scalable customer-support automation.
-
----
-
-## 🎯 Problem Statement
-
-Traditional support systems often require customers to manually identify their issue, provide structured information, and wait for a support representative.
-
-This creates several problems:
-
-* Unstructured customer messages
-* Repetitive manual triage
-* Inconsistent bug-report information
-* Slow ticket creation
-* Difficulty separating actionable bugs from general questions
-* Lack of structured persistence for reported issues
-
-This project addresses these problems by automatically interpreting incoming messages and routing them through specialized workflows.
-
----
-
-## 💡 Solution
-
-The system introduces an AI-powered routing layer using **Amazon Bedrock Flows**.
-
-A customer message is first classified according to its intent.
+The bug-report path combines LLM-based structured extraction with deterministic workflow execution:
 
 ```text
-                         ┌─────────────────────┐
-                         │   Customer Message  │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │   Intent Classifier │
-                         │  Amazon Bedrock LLM │
-                         └──────────┬──────────┘
-                                    │
-              ┌─────────────────────┼─────────────────────┐
-              │                     │                     │
-              ▼                     ▼                     ▼
-       ┌─────────────┐       ┌───────────────┐      ┌─────────────┐
-       │ Bug Report  │       │    Platform   │      │    Other    │
-       │    Path     │       │    Question   │      │   Request   │
-       └──────┬──────┘       └───────┬───────┘      └──────┬──────┘
-              │                      │                     │
-              ▼                      ▼                     ▼
-       ┌─────────────┐        ┌───────────────┐     ┌──────────────┐
-       │ Bug Report  │        │ FAQ / Support │     │    Human     │
-       │  Formatter  │        │    Response   │     │   Support    │
-       └──────┬──────┘        └───────────────┘     │  Redirect    │
-              │                                     └──────────────┘
-              ▼
-       ┌─────────────┐
-       │ AWS Lambda  │
-       │ create_bug_ │
-       │    report   │
-       └──────┬──────┘
-              │
-              ▼
-       ┌─────────────┐
-       │   Amazon    │
-       │  DynamoDB   │
-       └─────────────┘
+Customer Message
+       |
+       v
+Intent Classifier
+       |
+       +----------------------+----------------------+
+       |                      |                      |
+       v                      v                      v
+ BUG_REPORT          PLATFORM_QUESTION           OTHER
+       |                      |                      |
+       v                      v                      v
+Bug Report Formatter       FAQ / Support       Human Support
+       |
+       v
+AWS Lambda
+       |
+       v
+Amazon DynamoDB
 ```
 
----
-
-# 🏗️ Architecture
-
-## Core Components
-
-| Component                | Purpose                                                    |
-| ------------------------ | ---------------------------------------------------------- |
-| **Amazon Bedrock Flows** | Orchestrates the complete AI workflow                      |
-| **Amazon Nova Pro**      | Performs natural-language understanding and classification |
-| **Classifier Node**      | Determines the customer's request category                 |
-| **Condition Nodes**      | Deterministically route the request                        |
-| **Bug Report Formatter** | Converts unstructured bug reports into structured JSON     |
-| **AWS Lambda**           | Validates and creates bug-report tickets                   |
-| **Amazon DynamoDB**      | Persists bug-report records                                |
-| **Flow Version**         | Provides an immutable deployment snapshot                  |
-| **Flow Alias**           | Provides the stable deployment target                      |
-
-Amazon Bedrock Flow versions are immutable snapshots, while aliases can point to a selected version for application invocation.
+The project demonstrates an end-to-end cloud workflow in which the LLM performs language understanding/extraction while explicit Bedrock Flow conditions control routing and AWS services perform ticket creation and persistence.
 
 ---
 
-# 🔄 Workflow
+## Problem Statement
 
-## 1. Customer Message
+Customer support requests frequently arrive as unstructured natural-language messages. Manual triage can require customers to provide the same information repeatedly and can make it difficult to separate actionable bug reports from general platform questions.
 
-The system receives an unstructured customer message such as:
+This project addresses those problems by:
 
-> "The checkout page crashes whenever I click Pay Now."
+- classifying incoming requests,
+- extracting structured bug information,
+- creating persistent bug tickets,
+- answering supported platform questions through a configured FAQ,
+- escalating unsupported questions to human support, and
+- routing other requests away from the supported automation path.
 
 ---
 
-## 2. Intent Classification
+## Architecture
 
-The message is analyzed by the classifier and assigned to one of the supported categories:
+### Core Components
+
+| Component | Purpose |
+|---|---|
+| **Amazon Bedrock Flows** | Orchestrates the complete workflow |
+| **Amazon Nova Pro** | Performs natural-language understanding/classification |
+| **Classifier Node** | Determines the request category |
+| **Condition Nodes** | Deterministically route the request |
+| **Bug Report Formatter** | Converts bug-report information into structured JSON |
+| **AWS Lambda** | Creates the bug-report ticket |
+| **Amazon DynamoDB** | Persists bug-report records |
+| **Flow Version** | Provides an immutable deployment snapshot |
+| **Flow Alias** | Provides the stable deployment target |
+
+Amazon Bedrock Flow versions are immutable snapshots, and an alias can point to a selected version for invocation. This is the documented Bedrock deployment model for Flows. citehttps://docs.aws.amazon.com/bedrock/latest/userguide/flows-deploy.html
+
+### Routing Model
+
+The classifier produces one of:
 
 ```text
 BUG_REPORT
@@ -127,53 +89,67 @@ PLATFORM_QUESTION
 OTHER
 ```
 
-The classifier is responsible only for determining the appropriate route.
+The explicit Flow conditions then determine which workflow path executes.
 
 ---
+
+# Workflow
+
+## 1. Customer Message
+
+The system receives an unstructured customer message, for example:
+
+```text
+My application crashes whenever I click the Login button.
+```
+
+## 2. Intent Classification
+
+The classifier determines whether the request is:
+
+- `BUG_REPORT`
+- `PLATFORM_QUESTION`
+- `OTHER`
+
+The classifier is responsible for intent classification; the Flow condition nodes perform the deterministic routing.
 
 ## 3. Bug Report Path
 
-Bug reports are passed to a dedicated formatter.
+Bug reports are processed by the Bug Report Formatter.
 
-The formatter extracts:
+The formatter produces a predictable JSON structure:
 
 ```json
 {
-  "description": "The checkout page crashes when Pay Now is clicked.",
-  "stepsToReproduce": "Open checkout and click Pay Now.",
-  "environment": ""
+  "description": "The application crashes whenever I click the Login button.",
+  "stepsToReproduce": "Click the Login button.",
+  "environment": "Windows 11, Chrome"
 }
 ```
 
-### Extraction principles
+The formatter follows these principles:
 
-The formatter follows strict rules:
+- extract only information provided by the customer,
+- do not invent missing information,
+- represent missing optional information with empty strings,
+- return valid JSON, and
+- preserve the reported issue.
 
-* Extract only information provided by the customer.
-* Do not invent missing information.
-* Represent missing fields using empty strings.
-* Return valid JSON only.
-* Preserve the customer's reported issue.
-
-This separates **LLM-based extraction** from the deterministic ticket-creation logic.
-
----
+The structured result is then passed to the Lambda ticket-creation path.
 
 ## 4. Lambda Ticket Creation
 
-The structured bug report is passed to the AWS Lambda function.
+The AWS Lambda function creates the support ticket from the structured bug-report information.
 
-The Lambda function:
+The deployed function used by this project is:
 
-1. Receives the structured parameters.
-2. Validates the required description.
-3. Generates a unique ticket ID.
-4. Assigns an `OPEN` status.
-5. Generates a UTC timestamp.
-6. Stores the ticket in DynamoDB.
-7. Returns the created ticket information.
+```text
+create-bug-report-1c16e0e0
+```
 
-Example response:
+The Lambda returns a ticket identifier and status after successful creation.
+
+Example:
 
 ```json
 {
@@ -183,30 +159,44 @@ Example response:
 }
 ```
 
----
-
 ## 5. DynamoDB Persistence
 
-Successfully created tickets are stored in Amazon DynamoDB.
+Bug reports are persisted in:
 
-A typical record contains:
+```text
+bug-report-tool-stack-bug-reports
+```
+
+A ticket record contains fields such as:
 
 ```json
 {
   "ticketId": "generated-ticket-id",
-  "description": "The checkout page crashes when Pay Now is clicked.",
-  "stepsToReproduce": "Open checkout and click Pay Now.",
-  "environment": "",
+  "description": "The application crashes when Login is clicked.",
+  "stepsToReproduce": "Open the login page and click Login.",
+  "environment": "Windows 11, Chrome",
   "status": "OPEN",
   "createdAt": "UTC timestamp"
 }
 ```
 
-This provides persistent storage for support tickets and allows the workflow to return a trackable ticket identifier to the customer.
+This gives the support workflow a persistent, trackable ticket identifier.
+
+## 6. Platform Questions
+
+A platform question follows the configured FAQ/support path.
+
+For a covered question, the chatbot returns the corresponding supported FAQ answer rather than creating a bug ticket.
+
+For an uncovered platform question, the chatbot redirects the customer to human support instead of inventing unsupported information.
+
+## 7. Other Requests
+
+Requests outside the supported customer-support categories are routed to the `OTHER` path and redirected to human support.
 
 ---
 
-# 🧠 Bug Report Formatter
+# Bug Report Formatter
 
 The formatter uses the following structured-output contract:
 
@@ -230,38 +220,48 @@ Rules:
 - Return valid JSON only.
 ```
 
-The strict schema makes the downstream Lambda interface predictable and reduces the risk of malformed data.
+This contract keeps the interface between LLM-based extraction and deterministic ticket creation predictable.
 
 ---
 
-# 🧩 Lambda Interface
+# Lambda Interface
 
-The Lambda function expects the Bedrock function-style request structure and supports the following parameters:
+The Lambda ticket-creation path uses these bug-report fields:
 
-| Parameter          | Description                                         | Required |
-| ------------------ | --------------------------------------------------- | -------- |
-| `description`      | Description of the reported bug                     | Yes      |
-| `stepsToReproduce` | Steps supplied by the customer                      | No       |
-| `environment`      | Environment/device/context supplied by the customer | No       |
+| Parameter | Description | Required |
+|---|---|---|
+| `description` | Description of the reported bug | Yes |
+| `stepsToReproduce` | Reproduction steps supplied by the customer | No |
+| `environment` | Environment/device/context supplied by the customer | No |
 
-The Lambda rejects requests without a valid bug description and persists valid reports in DynamoDB.
+The repository contains the Lambda implementation under:
+
+```text
+lambda/index.py
+```
+
+Dependency declaration:
+
+```text
+lambda/requirements.txt
+```
 
 ---
 
-# 🗄️ Data Model
+# Data Model
 
-The DynamoDB ticket structure is:
+The DynamoDB ticket structure used by the workflow is:
 
-| Attribute          | Description                              |
-| ------------------ | ---------------------------------------- |
-| `ticketId`         | Unique identifier for the support ticket |
-| `description`      | Customer's bug description               |
-| `stepsToReproduce` | Reproduction steps                       |
-| `environment`      | Reported environment                     |
-| `status`           | Ticket lifecycle state                   |
-| `createdAt`        | UTC creation timestamp                   |
+| Attribute | Description |
+|---|---|
+| `ticketId` | Unique support-ticket identifier |
+| `description` | Customer's bug description |
+| `stepsToReproduce` | Reproduction steps |
+| `environment` | Reported environment |
+| `status` | Ticket status |
+| `createdAt` | UTC creation timestamp |
 
-### Example
+Example:
 
 ```json
 {
@@ -270,203 +270,130 @@ The DynamoDB ticket structure is:
   "stepsToReproduce": "Open checkout and click Pay Now.",
   "environment": "Web browser",
   "status": "OPEN",
-  "createdAt": "2026-09-05T00:00:00+00:00"
+  "createdAt": "UTC timestamp"
 }
 ```
 
 ---
 
-# 🧪 Testing & Validation
+# Testing and Validation
 
-The system was validated using multiple representative scenarios.
+The implementation was tested across the required routing and execution paths.
 
-| # | Test Case                  | Expected Path                  | Result   |
-| - | -------------------------- | ------------------------------ | -------- |
-| 1 | Complete bug report        | Bug Report → Lambda → DynamoDB | ✅ Passed |
-| 2 | Incomplete bug report      | Bug Report → Lambda → DynamoDB | ✅ Passed |
-| 3 | Platform question          | FAQ / Platform Question        | ✅ Passed |
-| 4 | General/other request      | Human Support                  | ✅ Passed |
-| 5 | Realistic checkout failure | Bug Report → Lambda → DynamoDB | ✅ Passed |
+| Test Scenario | Expected Behavior |
+|---|---|
+| Complete bug report | Bug Report → Formatter → Lambda → DynamoDB |
+| Incomplete bug report | Collect/structure available information without inventing missing data |
+| Covered platform question | FAQ/support response |
+| Uncovered platform question | Human-support handoff |
+| Other/out-of-scope request | Human-support handoff |
 
-## Example Test Cases
+### Bug Report Test
 
-### Test 1 — Complete Bug Report
-
-**Input**
+Example:
 
 ```text
-The checkout page crashes when I click Pay Now.
-Steps: Open checkout, add an item, and click Pay Now.
-Environment: Chrome on Windows.
+My application crashes whenever I click the Login button.
 ```
 
-**Expected behavior**
+The conversation collects the required bug-report information and the completed workflow creates a ticket.
 
-```text
-Bug Report
-    ↓
-Formatter
-    ↓
-Lambda
-    ↓
-DynamoDB
-```
+### Covered Platform Question
 
-**Result:** ✅ Ticket successfully created and persisted.
-
----
-
-### Test 2 — Missing Optional Information
-
-**Input**
-
-```text
-The checkout page crashes whenever I click Pay Now.
-```
-
-The formatter should not invent reproduction steps or environment information.
-
-Expected structure:
-
-```json
-{
-  "description": "The checkout page crashes whenever I click Pay Now.",
-  "stepsToReproduce": "",
-  "environment": ""
-}
-```
-
-**Result:** ✅ Ticket successfully created with missing optional fields represented by empty strings.
-
----
-
-### Test 3 — Platform Question
-
-**Input**
+Example:
 
 ```text
 How do I reset my password?
 ```
 
-**Expected path**
+The request follows the platform-question path and uses the configured FAQ response.
+
+### Uncovered Platform Question
+
+An unsupported platform question is routed to human support rather than answered with invented information.
+
+### Other Request
+
+An out-of-scope request is routed to the `OTHER` path and handed to human support.
+
+Detailed test cases and evaluation artifacts are stored under:
 
 ```text
-Classifier
-    ↓
-Platform Question
-    ↓
-FAQ / Support Response
+evaluation/
 ```
-
-**Result:** ✅ Correctly routed without creating a bug ticket.
 
 ---
 
-### Test 4 — Other Request
+# Evaluation
 
-**Input**
+The project includes an Amazon Bedrock **LLM-as-a-judge** evaluation using the completed chatbot responses.
 
-```text
-Can you recommend a good laptop for programming?
-```
-
-**Expected path**
+The evaluation uses the built-in:
 
 ```text
-Classifier
-    ↓
-Other
-    ↓
-Human Support Redirect
+Builtin.Correctness
 ```
 
-**Result:** ✅ Correctly routed to the other-request path.
+metric.
+
+Amazon Bedrock's judge-based evaluation can score supplied model responses, and the `Builtin.Correctness` metric measures whether a response is correct. citehttps://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-metrics.html
+
+The custom evaluation dataset is stored as JSONL in Amazon S3, as required for Bedrock LLM-as-a-judge evaluation datasets. citehttps://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-prompt-datasets-judge.html
+
+Repository evaluation artifacts:
+
+```text
+evaluation/
+├── test-cases.json
+├── output_eval_dataset.jsonl
+└── evaluation-observations.md
+```
+
+The evaluation screenshots are stored under:
+
+```text
+screenshots/
+```
+
+The evaluation observations document the actual results and findings from the completed evaluation.
 
 ---
 
-### Test 5 — Realistic Production-Style Bug
+# Deployment
 
-**Input**
+The Flow uses Amazon Bedrock's version-and-alias deployment model.
 
-```text
-The checkout page crashes whenever I click the Pay Now button.
-```
-
-**Expected path**
+Deployment lifecycle:
 
 ```text
-Classifier
-    ↓
-Bug Report
-    ↓
-Bug Report Formatter
-    ↓
-Create Bug Report Lambda
-    ↓
-DynamoDB
-```
-
-**Result:** ✅ Ticket created successfully and persisted in DynamoDB.
-
----
-
-# 🔐 Security Considerations
-
-This repository should **never contain AWS credentials or sensitive account information**.
-
-Do not commit:
-
-```text
-AWS access keys
-AWS secret keys
-AWS session tokens
-.env files
-local credential files
-temporary authentication tokens
-private configuration
-```
-
-Use AWS IAM permissions and local AWS credential configuration instead of hardcoding credentials into source code.
-
-The repository's `.gitignore` should prevent common local and secret-bearing files from being committed.
-
----
-
-# 🚀 Deployment
-
-The project uses Amazon Bedrock Flow deployment semantics.
-
-The deployment lifecycle is:
-
-```text
-DRAFT
-  ↓
+Working Draft
+     |
+     v
 Publish Version
-  ↓
-VERSION 1
-  ↓
-Alias
-  ↓
-Application / InvokeFlow
+     |
+     v
+Immutable Flow Version
+     |
+     v
+Flow Alias
+     |
+     v
+Application / Flow Invocation
 ```
 
-Amazon Bedrock creates immutable versions of a flow. An alias can then point to the version intended for application use.
+Amazon Bedrock documents versions as immutable snapshots of a Flow. An alias can then point to the version intended for invocation. citehttps://docs.aws.amazon.com/bedrock/latest/userguide/flows-deploy.html
 
-### Deployment Configuration
-
-Replace the placeholders below with your public deployment metadata if you want to expose it:
+Deployment region:
 
 ```text
-AWS Region: us-east-1
-Flow Version: <PUBLISHED_VERSION>
-Flow Alias: <DEPLOYMENT_ALIAS>
+us-east-1
 ```
 
-Do **not** publish AWS account IDs, IAM credentials, access keys, or other sensitive identifiers.
+The repository does not publish AWS account credentials, access keys, session tokens, or other secrets.
 
 ---
 
-# 📁 Recommended Repository Structure
+# Repository Structure
 
 ```text
 customer-support-chatbot/
@@ -476,85 +403,125 @@ customer-support-chatbot/
 ├── .gitignore
 │
 ├── lambda/
-│   └── index.py
+│   ├── index.py
+│   ├── requirements.txt
+│   └── README.md
+│
+├── flow/
+│   ├── classifier-prompt.txt
+│   ├── bug-report-formatter-prompt.txt
+│   └── flow-configuration.md
+│
+├── architecture/
+│   └── architecture.md
+│
+├── evaluation/
+│   ├── test-cases.json
+│   ├── output_eval_dataset.jsonl
+│   └── evaluation-observations.md
+│
+├── tests/
+│   ├── bug-report-test.md
+│   ├── platform-question-test.md
+│   ├── unsupported-question-test.md
+│   └── out-of-scope-test.md
 │
 ├── screenshots/
-│   ├── 01-flow-architecture.png
-│   ├── 02-classifier.png
-│   ├── 03-condition-routing.png
-│   ├── 04-bug-formatter.png
-│   ├── 05-lambda-configuration.png
-│   ├── 06-successful-flow-test.png
-│   ├── 07-dynamodb-record.png
-│   └── 08-version-and-alias.png
+│   ├── Condition Routing.png
+│   ├── Flow Architecture.png
+│   ├── Lambda Configuration.png
+│   ├── Message Classifier.png
+│   ├── bug-formatter.png
+│   ├── dynamodb-chatbot-item.png
+│   ├── dynamodb-record.png
+│   ├── successful-flow-test.png
+│   ├── version-and-alias.png
+│   ├── bug-report-conversation.png
+│   ├── covered-faq.png
+│   ├── uncovered-faq.png
+│   ├── out-of-scope.png
+│   ├── evaluation-job.png
+│   └── evaluation-results.png
 │
-└── test-results/
-    └── test-cases.md
+└── docs/
+    ├── project-overview.md
+    ├── deployment.md
+    └── testing.md
 ```
+
+If a file listed above is not part of the submitted repository, remove it from this documentation rather than leaving a fictional path.
 
 ---
 
-# 🛠️ Technology Stack
+# Technology Stack
 
 ### Cloud & AI
 
-* Amazon Bedrock
-* Amazon Bedrock Flows
-* Amazon Nova Pro
-* AWS Lambda
-* Amazon DynamoDB
+- Amazon Bedrock
+- Amazon Bedrock Flows
+- Amazon Nova Pro
+- AWS Lambda
+- Amazon DynamoDB
+- Amazon S3 for evaluation artifacts
 
 ### Programming
 
-* Python 3.12
-* JSON
-* AWS SDK for Python (`boto3`)
+- Python 3.12
+- JSON
+- AWS SDK for Python (`boto3`)
 
 ### Development & Deployment
 
-* AWS Management Console
-* AWS CLI
-* Git
-* GitHub
+- AWS Management Console
+- AWS CLI
+- Git
+- GitHub
 
 ---
 
-# 📋 Requirements
+# Requirements
 
-Before deploying the project, ensure you have:
+Before deploying or reproducing the project, ensure that you have:
 
-* An AWS account
-* Access to Amazon Bedrock
-* Access to the required Bedrock model
-* Permission to create/use Bedrock Flows
-* AWS Lambda permissions
-* DynamoDB permissions
-* AWS CLI configured
-* Python 3.9+
-* `boto3`
+- An AWS account
+- Access to Amazon Bedrock
+- Access to the required Bedrock model
+- Permissions to create and use Bedrock Flows
+- Lambda permissions
+- DynamoDB permissions
+- Amazon S3 permissions for evaluation artifacts
+- AWS CLI configured
+- Python 3.12
+- `boto3`
 
-Required AWS permissions depend on the deployment environment and IAM configuration.
+Required IAM permissions depend on the deployment environment and should be granted according to least-privilege requirements.
 
 ---
 
-# ⚙️ Configuration
+# Configuration
 
-The Lambda function uses an environment variable to identify the DynamoDB table:
+The Lambda function uses the following environment variable to identify the DynamoDB table:
 
 ```text
 TABLE_NAME=<your-dynamodb-table>
+```
+
+For the deployed project, the table is:
+
+```text
+bug-report-tool-stack-bug-reports
 ```
 
 The table name should be configured through the Lambda environment rather than hardcoded into application logic.
 
 ---
 
-# ▶️ Local Lambda Development
+# Local Lambda Development
 
-Install the AWS SDK:
+Install the declared dependency:
 
 ```bash
-pip install boto3
+pip install -r lambda/requirements.txt
 ```
 
 The Lambda handler is:
@@ -563,55 +530,95 @@ The Lambda handler is:
 index.lambda_handler
 ```
 
-The deployed Lambda should use:
+The deployed Lambda runtime is:
 
 ```text
-Runtime: Python 3.12
-Handler: index.lambda_handler
+Python 3.12
 ```
 
 ---
 
-# 📊 Design Principles
+# Security
 
-The implementation follows several important engineering principles:
+Never commit AWS credentials or other sensitive information to the repository.
 
-### 1. Separation of Concerns
+Do not commit:
 
-The system separates:
+```text
+AWS access keys
+AWS secret keys
+AWS session tokens
+.env files containing secrets
+.aws credential/configuration files
+private authentication tokens
+```
 
-* intent classification
-* information extraction
-* business logic
-* persistence
-
-This makes individual components easier to test and maintain.
-
-### 2. Structured Data Contracts
-
-The formatter produces a predictable JSON structure before invoking downstream business logic.
-
-### 3. Deterministic Routing
-
-The LLM determines the intent, while explicit Flow conditions control the actual workflow path.
-
-### 4. Serverless Architecture
-
-Lambda and DynamoDB eliminate the need to maintain traditional application servers for the ticket-creation workflow.
-
-### 5. Fail-Safe Extraction
-
-Missing information is not fabricated. Optional missing fields are represented using empty strings.
-
-### 6. Immutable Deployment
-
-The production flow should use a published Bedrock Flow version through an alias rather than relying on the continuously changing draft.
+Use AWS IAM and local AWS credential configuration instead of hardcoding credentials into source code.
 
 ---
 
-# 🔍 Observability & Debugging
+# Evidence
 
-During development, the system can be validated at multiple layers:
+The `screenshots/` directory contains evidence for the implemented and tested workflow.
+
+The evidence set covers:
+
+1. Flow architecture
+2. Message classification
+3. Conditional routing
+4. Bug-report formatting
+5. Flow-to-Lambda configuration
+6. DynamoDB persistence
+7. Successful Flow execution
+8. Published version and alias
+9. End-to-end bug-report conversation
+10. Covered FAQ behavior
+11. Uncovered platform-question handoff
+12. Other-request handoff
+13. Evaluation job configuration
+14. Evaluation results
+
+The repository also contains the evaluation dataset and written observations required to reproduce and inspect the evaluation process.
+
+---
+
+# Design Principles
+
+### 1. Separation of Concerns
+
+The implementation separates:
+
+- intent classification,
+- information extraction,
+- ticket creation,
+- persistence, and
+- support escalation.
+
+### 2. Structured Data Contracts
+
+The Bug Report Formatter produces a predictable JSON structure before downstream ticket creation.
+
+### 3. Deterministic Routing
+
+The LLM determines the intent category, while explicit Bedrock Flow conditions control the workflow path.
+
+### 4. Serverless Architecture
+
+Lambda and DynamoDB provide the ticket-creation and persistence layer without requiring traditional application servers.
+
+### 5. No Fabricated Bug Information
+
+The formatter is instructed to extract only information provided by the customer and represent missing optional fields as empty strings.
+
+### 6. Immutable Deployment
+
+The deployed Flow uses a published version through an alias rather than relying on a continuously changing draft.
+
+---
+
+# Observability and Debugging
+
+The workflow can be validated layer by layer:
 
 ```text
 Customer Input
@@ -629,83 +636,51 @@ Lambda Response
 DynamoDB Record
 ```
 
-This layered validation makes it possible to identify whether an issue originates from classification, routing, extraction, Lambda execution, or persistence.
+This layered structure makes it possible to identify whether a problem originates in classification, routing, extraction, Lambda execution, or persistence.
 
 ---
 
-# 📈 Future Improvements
+# Future Improvements
 
 Potential production enhancements include:
 
-* Authentication and authorization
-* Conversation history
-* Ticket-status lookup
-* Ticket updates and closing workflows
-* Human-agent dashboard
-* Amazon CloudWatch monitoring and alarms
-* Dead-letter/error handling
-* Retry strategies
-* Input validation and abuse protection
-* Confidence-aware classification
-* Guardrails for unsafe or inappropriate requests
-* Automated regression testing
-* CI/CD deployment
-* Infrastructure as Code using AWS CloudFormation, AWS CDK, or Terraform
-* Multi-language customer support
-* Integration with existing CRM/help-desk systems
-* Analytics for support volume and intent distribution
+- Authentication and authorization
+- Conversation history
+- Ticket-status lookup
+- Ticket updates and closing workflows
+- Human-agent dashboard
+- CloudWatch monitoring and alarms
+- Retry and error-handling strategies
+- Input validation and abuse protection
+- Confidence-aware classification
+- Guardrails for unsafe or inappropriate requests
+- Automated regression testing
+- CI/CD deployment
+- Infrastructure as Code
+- Multi-language support
+- CRM/help-desk integration
+
+These are **future improvements**, not claims about functionality currently implemented in this submission.
 
 ---
 
-# 🎓 Project Outcomes
+# Project Outcomes
 
 This project demonstrates practical implementation of:
 
-* Generative AI workflow orchestration
-* Amazon Bedrock Flows
-* LLM-based intent classification
-* Structured information extraction
-* Conditional workflow routing
-* AWS Lambda integration
-* Serverless database persistence
-* JSON-based tool interfaces
-* End-to-end cloud application testing
-* Immutable AI workflow deployment using versions and aliases
+- Generative AI workflow orchestration
+- Amazon Bedrock Flows
+- LLM-based intent classification
+- Structured information extraction
+- Conditional workflow routing
+- AWS Lambda integration
+- DynamoDB persistence
+- JSON-based data contracts
+- End-to-end cloud application testing
+- Bedrock LLM-as-a-judge evaluation
+- Immutable Flow deployment using versions and aliases
 
-The project moves beyond a simple chatbot by combining **LLM reasoning with deterministic cloud automation and persistent backend state**.
-
----
-
-# 📸 Evidence
-
-The `screenshots/` directory contains implementation and validation evidence, including:
-
-1. Complete Bedrock Flow architecture
-2. Classifier configuration
-3. Routing conditions
-4. Bug Report Formatter configuration
-5. Lambda configuration
-6. Successful end-to-end execution
-7. DynamoDB ticket record
-8. Published Flow version and deployment alias
-
-These screenshots provide visual evidence of both the implementation and successful execution of the system.
-
----
-
-# 🤝 Contributing
-
-Contributions, suggestions, and improvements are welcome.
-
-For substantial changes:
-
-1. Fork the repository.
-2. Create a feature branch.
-3. Implement and test your changes.
-4. Commit your changes with a descriptive message.
-5. Open a pull request.
-
-Please avoid committing credentials, private configuration, or sensitive AWS information.
+The implementation combines **LLM reasoning with deterministic cloud workflow orchestration and persistent backend state**.
 
 ---
 
@@ -717,7 +692,7 @@ See the [`LICENSE`](LICENSE) file for the complete license text.
 
 ---
 
-# 👤 Author
+# Author
 
 **Ahmad Saleem**
 
@@ -725,25 +700,18 @@ Computer Science Student | AI/ML & Generative AI Enthusiast
 
 Interested in:
 
-* Artificial Intelligence
-* Machine Learning
-* Generative AI
-* LLM Applications
-* AI Agents
-* Cloud Computing
-* Intelligent Automation
+- Artificial Intelligence
+- Machine Learning
+- Generative AI
+- LLM Applications
+- Cloud Computing
+- Intelligent Automation
 
 ---
 
-## ⭐ Acknowledgements
+# Acknowledgements
 
-Built using services and technologies provided by **Amazon Web Services**, including Amazon Bedrock, AWS Lambda, and Amazon DynamoDB.
-
----
-
-## ⭐ If You Find This Project Useful
-
-Consider giving the repository a ⭐ on GitHub and sharing feedback or suggestions.
+Built using services and technologies provided by **Amazon Web Services**, including Amazon Bedrock, AWS Lambda, Amazon DynamoDB, and Amazon S3.
 
 ---
 
