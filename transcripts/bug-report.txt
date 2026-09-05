@@ -1,0 +1,24 @@
+Customer:
+My application crashes whenever I click the Login button.
+
+Assistant:
+I'm sorry you're experiencing that. Can you tell me the steps you take before the crash?
+
+Customer:
+I open the application, enter valid credentials, and click Login.
+
+Assistant:
+What environment are you using?
+
+Customer:
+Windows 11 with Chrome.
+
+Assistant:
+Thank you. I have the information needed to create the bug report.
+
+[Flow invokes Lambda]
+
+Bug report created successfully.
+Ticket ID: ...
+Status:Open
+message:Bug report created successfully
