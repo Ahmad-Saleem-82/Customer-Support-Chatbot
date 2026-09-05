@@ -5,7 +5,7 @@
 [![AWS](https://img.shields.io/badge/AWS-Amazon%20Bedrock-orange?logo=amazon-aws)](https://aws.amazon.com/bedrock/)
 [![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)](https://www.python.org/)
 [![Amazon DynamoDB](https://img.shields.io/badge/Database-DynamoDB-blue?logo=amazondynamodb)](https://aws.amazon.com/dynamodb/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 ---
 
@@ -709,9 +709,9 @@ Please avoid committing credentials, private configuration, or sensitive AWS inf
 
 ---
 
-# 📄 License
+# License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the **Apache License 2.0**.
 
 See the [`LICENSE`](LICENSE) file for the complete license text.
 
