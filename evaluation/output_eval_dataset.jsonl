@@ -1,0 +1,4 @@
+{"prompt":"My application crashes whenever I click the Login button.","referenceResponse":"The system should collect the bug description, steps to reproduce, and environment before creating a bug report.","category":"BUG_REPORT"}
+{"prompt":"How do I reset my password?","referenceResponse":"The system should answer using the available FAQ information.","category":"PLATFORM_QUESTION"}
+{"prompt":"Does the platform support biometric authentication?","referenceResponse":"The system should not invent an answer and should direct the customer to human support.","category":"PLATFORM_QUESTION"}
+{"prompt":"Can you recommend a gaming laptop?","referenceResponse":"The system should politely direct the customer to human support.","category":"OTHER"}
